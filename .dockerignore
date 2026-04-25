@@ -1,44 +1,43 @@
+# Dependencies (will be installed fresh in container)
 node_modules
 npm-debug.log
+
+# Build output (will be built fresh in container)
+dist
+dist-ssr
+*.local
+
+# Git
 .git
 .gitignore
-README.md
+
+# Environment files
 .env
 .env.local
+
+# Documentation
 *.md
 docs/
+
+# IDE
 .vscode/
 .claude/
-src/
-public/
-vite.config.js
-tailwind.config.js
-postcss.config.js
-eslint.config.js
+
+# Test files
 *.csv
 *.log
 test-*.csv
-BLEEDING-KEYWORDS-TEST.csv
-FULL-90-DAYS-DATA.csv
-USE-THIS-FILE-ONLY.csv
 check-data.js
 clear-db.html
 diagnostic.html
 forensic-test.mjs
 test-browser.mjs
 ngrok.log
+
+# Deployment configs
 deploy.bat
 app.yaml
 .gcloudignore
-DEPLOYMENT.md
-QUICKSTART.md
-DESIGN_ENHANCEMENTS.md
-DIAGNOSTIC_REPORT.md
-FIXES_APPLIED.md
-NETWORK_ACCESS.md
-PERFORMANCE_ENGINE_REPORT.md
-PILLAR1_EXPANSION_REPORT.md
-PILLAR1_IMPLEMENTATION_REPORT.md
-PROJECT_COMPLETION_SUMMARY.md
-ROOT_CAUSE_ANALYSIS.md
+
+# Backup files
 tailwind.config.backup.js
