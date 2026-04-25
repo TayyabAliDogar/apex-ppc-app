@@ -1,0 +1,35 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run *)",
+      "Bash(curl -s http://localhost:5189)",
+      "WebSearch",
+      "Bash(netstat -ano)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5191/)",
+      "Bash(curl *)",
+      "Bash(node check-data.js)",
+      "Bash(npm install *)",
+      "Bash(ipconfig)",
+      "Bash(findstr /i \"IPv4\")",
+      "Bash(timeout 3 cat \"C:\\\\Users\\\\LAPTOP~1\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-Laptop-collection-vibe-ppc-app\\\\71b74621-3823-468e-a9bb-76bc35012895\\\\tasks\\\\blck0zvpx.output\")",
+      "Bash(npx localtunnel *)",
+      "Bash(timeout 5 cat \"C:\\\\Users\\\\LAPTOP~1\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-Laptop-collection-vibe-ppc-app\\\\71b74621-3823-468e-a9bb-76bc35012895\\\\tasks\\\\begxnc32h.output\")",
+      "Bash(timeout 8 cat \"C:\\\\Users\\\\LAPTOP~1\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-Laptop-collection-vibe-ppc-app\\\\71b74621-3823-468e-a9bb-76bc35012895\\\\tasks\\\\bsorqr9jg.output\")",
+      "Bash(timeout 10 tail -20 \"C:\\\\Users\\\\LAPTOP~1\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-Laptop-collection-vibe-ppc-app\\\\71b74621-3823-468e-a9bb-76bc35012895\\\\tasks\\\\bsorqr9jg.output\")",
+      "Bash(npx ngrok *)",
+      "Bash(taskkill /F /IM node.exe /FI \"WINDOWTITLE eq ngrok*\")",
+      "Bash(tasklist)",
+      "Bash(findstr ngrok *)",
+      "Bash(taskkill *)",
+      "Bash(findstr :5200)",
+      "Bash(ngrok http *)",
+      "Bash(npm uninstall *)",
+      "Bash(node server.js)",
+      "Bash(findstr \":5189\")",
+      "Bash(findstr \"LISTENING\")",
+      "Bash(findstr \":5190\")",
+      "Bash(findstr \":3001\")",
+      "Bash(gcloud --version)"
+    ]
+  }
+}

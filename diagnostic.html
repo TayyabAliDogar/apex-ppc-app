@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VibePPC Diagnostic</title>
+  <style>
+    body {
+      font-family: monospace;
+      background: #000;
+      color: #0f0;
+      padding: 20px;
+    }
+    .error { color: #f00; }
+    .success { color: #0f0; }
+    .info { color: #ff0; }
+    pre {
+      background: #111;
+      padding: 10px;
+      border: 1px solid #333;
+      margin: 10px 0;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔍 VibePPC Forensic Diagnostic</h1>
+  <div id="log"></div>
+
+  <script type="module">
+    const log = document.getElementById('log');
+
+    function addLog(message, type = 'info') {
+      const entry = document.createElement('pre');
+      entry.className = type;
+      entry.textContent = `[${new Date().toISOString()}] ${message}`;
+      log.appendChild(entry);
+      console.log(message);
+    }
+
+    // Capture all console methods
+    const originalConsole = {
+      log: console.log,
+      error: console.error,
+      warn: console.warn
+    };
+
+    console.log = (...args) => {
+      addLog('LOG: ' + args.join(' '), 'info');
+      originalConsole.log(...args);
+    };
+
+    console.error = (...args) => {
+      addLog('ERROR: ' + args.join(' '), 'error');
+      originalConsole.error(...args);
+    };
+
+    console.warn = (...args) => {
+      addLog('WARN: ' + args.join(' '), 'info');
+      originalConsole.warn(...args);
+    };
+
+    // Global error handler
+    window.addEventListener('error', (event) => {
+      addLog(`UNCAUGHT ERROR: ${event.message}\nFile: ${event.filename}\nLine: ${event.lineno}:${event.colno}\nStack: ${event.error?.stack}`, 'error');
+    });
+
+    // Unhandled promise rejection handler
+    window.addEventListener('unhandledrejection', (event) => {
+      addLog(`UNHANDLED PROMISE REJECTION: ${event.reason}\nStack: ${event.reason?.stack}`, 'error');
+    });
+
+    addLog('🔍 Diagnostic page loaded', 'success');
+    addLog('📦 Starting module imports...', 'info');
+
+    // Now try to import and run the app
+    try {
+      addLog('Importing React...', 'info');
+      import('react').then(() => {
+        addLog('✅ React imported successfully', 'success');
+      }).catch(err => {
+        addLog(`❌ React import failed: ${err.message}\n${err.stack}`, 'error');
+      });
+
+      addLog('Importing ReactDOM...', 'info');
+      import('react-dom/client').then(() => {
+        addLog('✅ ReactDOM imported successfully', 'success');
+      }).catch(err => {
+        addLog(`❌ ReactDOM import failed: ${err.message}\n${err.stack}`, 'error');
+      });
+
+      addLog('Importing main.jsx...', 'info');
+      import('./src/main.jsx').then(() => {
+        addLog('✅ main.jsx imported successfully', 'success');
+        addLog('🎉 If you see this, the app should be rendering', 'success');
+      }).catch(err => {
+        addLog(`❌ main.jsx import FAILED: ${err.message}\n${err.stack}`, 'error');
+        addLog('🔥 ROOT CAUSE FOUND: Check the error above', 'error');
+      });
+
+    } catch (err) {
+      addLog(`❌ SYNCHRONOUS ERROR: ${err.message}\n${err.stack}`, 'error');
+    }
+  </script>
+</body>
+</html>

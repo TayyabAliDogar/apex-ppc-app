@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Clear VibePPC Database</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #0a0a0a;
+            color: #fff;
+        }
+        button {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 10px 0;
+        }
+        button:hover {
+            background: #059669;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <h1>🗑️ Clear VibePPC Database</h1>
+    <p>This will delete the corrupted IndexedDB database and allow the app to start fresh.</p>
+    
+    <button onclick="clearDatabase()">Clear Database Now</button>
+    
+    <div id="status" class="status" style="display:none;"></div>
+
+    <script>
+        async function clearDatabase() {
+            const statusDiv = document.getElementById('status');
+            statusDiv.style.display = 'block';
+            statusDiv.innerHTML = '🔄 Clearing database...';
+
+            try {
+                // Delete the database
+                await new Promise((resolve, reject) => {
+                    const request = indexedDB.deleteDatabase('VibePPC');
+                    
+                    request.onsuccess = () => {
+                        console.log('✅ Database deleted');
+                        resolve();
+                    };
+                    
+                    request.onerror = () => {
+                        console.error('❌ Delete failed');
+                        reject(request.error);
+                    };
+                    
+                    request.onblocked = () => {
+                        statusDiv.innerHTML = '⚠️ Database deletion blocked. Close all VibePPC tabs and try again.';
+                        reject(new Error('Blocked'));
+                    };
+                });
+
+                statusDiv.innerHTML = '✅ Database cleared successfully!<br><br>You can now close this tab and reload the VibePPC app.';
+            } catch (error) {
+                statusDiv.innerHTML = '❌ Error: ' + error.message + '<br><br>Close all VibePPC tabs and try again.';
+            }
+        }
+    </script>
+</body>
+</html>
