@@ -7,14 +7,21 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci --only=production
+# Install ALL dependencies (including dev dependencies for build)
+RUN npm ci
 
-# Copy built frontend files
-COPY dist ./dist
+# Copy all source files
+COPY . .
 
-# Copy server file
-COPY server.js ./
+# Accept API key as build argument
+ARG VITE_GEMINI_API_KEY
+ENV VITE_GEMINI_API_KEY=$VITE_GEMINI_API_KEY
+
+# Build the frontend with API key available
+RUN npm run build
+
+# Remove dev dependencies to reduce image size
+RUN npm prune --production
 
 # Expose port (Cloud Run will set PORT env variable)
 EXPOSE 8080

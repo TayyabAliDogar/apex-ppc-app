@@ -1,0 +1,43 @@
+steps:
+  # Build the container image with API key as build arg
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '--build-arg'
+      - 'VITE_GEMINI_API_KEY=${_VITE_GEMINI_API_KEY}'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/apex-ppc:$BUILD_ID'
+      - '.'
+
+  # Push the container image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'gcr.io/$PROJECT_ID/apex-ppc:$BUILD_ID'
+
+  # Deploy to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'apex-ppc'
+      - '--image'
+      - 'gcr.io/$PROJECT_ID/apex-ppc:$BUILD_ID'
+      - '--region'
+      - 'asia-south1'
+      - '--platform'
+      - 'managed'
+      - '--allow-unauthenticated'
+      - '--memory'
+      - '512Mi'
+      - '--cpu'
+      - '1'
+      - '--port'
+      - '8080'
+
+images:
+  - 'gcr.io/$PROJECT_ID/apex-ppc:$BUILD_ID'
+
+options:
+  logging: CLOUD_LOGGING_ONLY
