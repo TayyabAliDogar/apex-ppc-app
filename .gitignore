@@ -18,6 +18,14 @@ dist-ssr
 .env.production
 .env.development
 
+# Claude Code settings (local development)
+.claude/
+
+# CSV data files (may contain sensitive campaign data)
+*.csv
+!*example*.csv
+!*sample*.csv
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
