@@ -4,13 +4,33 @@
 .gcloudignore
 .git
 .gitignore
+
+# Dependencies (will be installed in container)
 node_modules/
-src/
-public/
-*.md
+
+# Build output (will be built in container)
+dist/
+dist-ssr/
+
+# Environment files
 .env
 .env.local
-vite.config.js
+
+# Documentation
+*.md
+docs/
+
+# Logs and test files
 *.log
+*.csv
+
+# IDE
 .vscode/
 .claude/
+
+# Deployment configs
+deploy.bat
+app.yaml
+
+# Backup files
+tailwind.config.backup.js
