@@ -50,10 +50,49 @@ function parseAmazonHTML(html, asin) {
       }
     }
 
-    // Extract description
-    const descMatch = html.match(/<div id="productDescription"[^>]*>\s*<p>(.*?)<\/p>/s);
-    if (descMatch) {
-      productData.description = cleanText(descMatch[1]).substring(0, 2000);
+    // Extract description - try multiple patterns
+    let description = '';
+
+    // Pattern 1: Standard productDescription div with p tag
+    const descMatch1 = html.match(/<div id="productDescription"[^>]*>\s*<p>(.*?)<\/p>/s);
+    if (descMatch1) {
+      description = cleanText(descMatch1[1]);
+    }
+
+    // Pattern 2: productDescription div with any content
+    if (!description) {
+      const descMatch2 = html.match(/<div id="productDescription"[^>]*>(.*?)<\/div>/s);
+      if (descMatch2) {
+        description = cleanText(descMatch2[1]);
+      }
+    }
+
+    // Pattern 3: Feature bullets section (fallback)
+    if (!description) {
+      const descMatch3 = html.match(/<div id="feature-bullets"[^>]*>(.*?)<\/div>/s);
+      if (descMatch3) {
+        description = cleanText(descMatch3[1]);
+      }
+    }
+
+    // Pattern 4: A+ content section
+    if (!description) {
+      const descMatch4 = html.match(/<div id="aplus"[^>]*>(.*?)<\/div>/s);
+      if (descMatch4) {
+        description = cleanText(descMatch4[1]);
+      }
+    }
+
+    // Pattern 5: Any div with "description" in class or id
+    if (!description) {
+      const descMatch5 = html.match(/<div[^>]*(?:id|class)="[^"]*description[^"]*"[^>]*>(.*?)<\/div>/si);
+      if (descMatch5) {
+        description = cleanText(descMatch5[1]);
+      }
+    }
+
+    if (description) {
+      productData.description = description.substring(0, 2000);
     }
 
     // Extract price
