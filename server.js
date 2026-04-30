@@ -13,6 +13,28 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 8080;
 
+// FIX: Add request cache to avoid repeated scraping
+const scraperCache = new Map();
+const CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
+
+// FIX: Rotate User-Agents to avoid detection
+const USER_AGENTS = [
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:122.0) Gecko/20100101 Firefox/122.0',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Safari/605.1.15'
+];
+
+function getRandomUserAgent() {
+  return USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
+}
+
+// FIX: Add delay utility for retry logic
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 // Middleware
 app.use(cors());
 app.use(express.json());
@@ -151,51 +173,112 @@ app.post('/api/scrape-amazon', async (req, res) => {
     return res.status(400).json({ error: 'ASIN is required' });
   }
 
+  // FIX: Check cache first
+  const cacheKey = `${asin}_${marketplace}`;
+  const cached = scraperCache.get(cacheKey);
+  if (cached && (Date.now() - cached.timestamp < CACHE_DURATION)) {
+    console.log(`✅ Returning cached data for ${asin}`);
+    return res.json(cached.data);
+  }
+
   const url = `https://www.amazon.${marketplace}/dp/${asin}`;
 
-  try {
-    console.log(`🔍 Fetching: ${url}`);
+  // FIX: Retry logic with exponential backoff
+  const maxRetries = 3;
+  let lastError = null;
 
-    const response = await fetch(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-        'Accept-Language': 'en-US,en;q=0.5',
-        'Accept-Encoding': 'gzip, deflate, br',
-        'Connection': 'keep-alive'
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`🔍 Fetching: ${url} (Attempt ${attempt}/${maxRetries})`);
+
+      // FIX: Add random delay between retries to avoid rate limiting
+      if (attempt > 1) {
+        const delayMs = Math.pow(2, attempt - 1) * 1000 + Math.random() * 1000; // Exponential backoff with jitter
+        console.log(`⏳ Waiting ${Math.round(delayMs)}ms before retry...`);
+        await delay(delayMs);
       }
-    });
 
-    if (!response.ok) {
-      throw new Error(`Amazon returned ${response.status}`);
-    }
-
-    const html = await response.text();
-
-    // Check for CAPTCHA
-    if (html.includes('Robot Check') || html.includes('captcha')) {
-      return res.status(403).json({
-        error: 'Amazon blocked the request with CAPTCHA. Try again later.'
+      const response = await fetch(url, {
+        headers: {
+          'User-Agent': getRandomUserAgent(), // FIX: Rotate user agents
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+          'Accept-Language': 'en-US,en;q=0.9',
+          'Accept-Encoding': 'gzip, deflate, br',
+          'Connection': 'keep-alive',
+          'Upgrade-Insecure-Requests': '1',
+          'Sec-Fetch-Dest': 'document',
+          'Sec-Fetch-Mode': 'navigate',
+          'Sec-Fetch-Site': 'none',
+          'Cache-Control': 'max-age=0',
+          'DNT': '1'
+        }
       });
-    }
 
-    const productData = parseAmazonHTML(html, asin);
+      if (!response.ok) {
+        throw new Error(`Amazon returned ${response.status}`);
+      }
 
-    if (!productData.title) {
-      return res.status(404).json({
-        error: 'Could not extract product data. Product may not exist or page structure changed.'
+      const html = await response.text();
+
+      // Check for CAPTCHA
+      if (html.includes('Robot Check') || html.includes('captcha') || html.includes('Type the characters you see in this image')) {
+        console.warn(`⚠️ CAPTCHA detected on attempt ${attempt}`);
+
+        // If this is the last attempt, return error
+        if (attempt === maxRetries) {
+          return res.status(403).json({
+            error: 'Amazon blocked the request with CAPTCHA. Please try again in a few minutes or use manual input.'
+          });
+        }
+
+        // Otherwise, retry
+        lastError = new Error('CAPTCHA detected');
+        continue;
+      }
+
+      const productData = parseAmazonHTML(html, asin);
+
+      if (!productData.title) {
+        console.warn(`⚠️ No title found on attempt ${attempt}`);
+
+        // If this is the last attempt, return error
+        if (attempt === maxRetries) {
+          return res.status(404).json({
+            error: 'Could not extract product data. Product may not exist or page structure changed.'
+          });
+        }
+
+        // Otherwise, retry
+        lastError = new Error('No product data found');
+        continue;
+      }
+
+      // FIX: Cache successful result
+      scraperCache.set(cacheKey, {
+        data: productData,
+        timestamp: Date.now()
       });
+
+      console.log(`✅ Successfully scraped: ${productData.title}`);
+      return res.json(productData);
+
+    } catch (error) {
+      console.error(`❌ Scraping error on attempt ${attempt}:`, error.message);
+      lastError = error;
+
+      // If this is the last attempt, return error
+      if (attempt === maxRetries) {
+        return res.status(500).json({
+          error: `Failed to scrape product after ${maxRetries} attempts: ${error.message}`
+        });
+      }
     }
-
-    console.log(`✅ Successfully scraped: ${productData.title}`);
-    res.json(productData);
-
-  } catch (error) {
-    console.error('❌ Scraping error:', error);
-    res.status(500).json({
-      error: `Failed to scrape product: ${error.message}`
-    });
   }
+
+  // Fallback error response
+  res.status(500).json({
+    error: `Failed to scrape product: ${lastError?.message || 'Unknown error'}`
+  });
 });
 
 /**

@@ -108,6 +108,30 @@ export function ListingEditor() {
   const [loadingInsights, setLoadingInsights] = useState(false);
   const[cooldownProgress, setCooldownProgress] = useState(0);
 
+  // FIX: Clear listing editor data on hard refresh
+  useEffect(() => {
+    // Detect if this is a page reload (hard refresh)
+    const navigationEntries = performance.getEntriesByType('navigation');
+    const isReload = navigationEntries.length > 0 && navigationEntries[0].type === 'reload';
+
+    if (isReload) {
+      // Clear listing editor data from localStorage on hard refresh
+      localStorage.removeItem('vibeppc_listing_editor');
+      console.log('🔄 Hard refresh detected - Cleared listing editor data');
+
+      // Reset all state to empty
+      setListing({
+        title: '',
+        bullets: ['', '', '', '', ''],
+        description: ''
+      });
+      setSuggestions(null);
+      setUserAsin('');
+      setCompetitorAsins(['', '', '']);
+      setCompetitorData([]);
+    }
+  }, []); // Run once on mount
+
   // CRITICAL FIX: Persist listing editor state to localStorage
   useEffect(() => {
     const dataToSave = {
